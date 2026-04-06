@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model CandidateProfile {
+  id           String  @id @default(cuid())
+  fullName     String  @default("")
+  email        String  @default("")
+  phone        String  @default("")
+  location     String  @default("")
+  linkedin     String  @default("")
+  portfolioUrl String  @default("")
+  cvMarkdown   String  @default("")
+  targetRoles  String  @default("[]")
+  archetypes   String  @default("[]")
+  narrative    String  @default("{}")
+  compensation String  @default("{}")
+  timezone     String  @default("")
+  isOnboarded  Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model JobApplication {
+  id        String   @id @default(cuid())
+  number    Int      @unique @default(autoincrement())
+  date      String
+  company   String
+  role      String
+  score     Float    @default(0)
+  scoreRaw  String   @default("")
+  status    String   @default("Evaluated")
+  hasPdf    Boolean  @default(false)
+  pdfPath   String   @default("")
+  notes     String   @default("")
+  jobUrl    String   @default("")
+  jdText    String   @default("")
+  archetype String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  evaluation EvaluationReport?
+}
+
+model EvaluationReport {
+  id                  String @id @default(cuid())
+  applicationId       String @unique
+  application         JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  dimensionScores     String @default("{}")
+  globalScore         Float  @default(0)
+  roleSummary         String @default("")
+  cvMatch             String @default("[]")
+  gaps                String @default("[]")
+  levelStrategy       String @default("")
+  compResearch        String @default("")
+  personalizationPlan String @default("[]")
+  interviewPrep       String @default("[]")
+  keywords            String @default("[]")
+  draftAnswers        String @default("")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model PortalConfig {
+  id          String   @id @default(cuid())
+  name        String
+  careersUrl  String
+  apiUrl      String   @default("")
+  scanMethod  String   @default("playwright")
+  scanQuery   String   @default("")
+  notes       String   @default("")
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  scanResults ScanResult[]
+}
+
+model ScanResult {
+  id        String   @id @default(cuid())
+  portalId  String
+  portal    PortalConfig @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  title     String
+  url       String
+  company   String
+  firstSeen DateTime @default(now())
+  status    String   @default("added")
+
+  @@unique([url, portalId])
+}
+
+model TitleFilter {
+  id             String @id @default(cuid())
+  positive       String @default("[]")
+  negative       String @default("[]")
+  seniorityBoost String @default("[]")
+}
