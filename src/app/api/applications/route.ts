@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { auth } from "@/auth";
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = session.user.id;
+
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
   const minScore = searchParams.get("minScore");
@@ -9,7 +16,7 @@ export async function GET(request: NextRequest) {
   const order = searchParams.get("order") ?? "desc";
   const search = searchParams.get("search");
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { userId };
   if (status) where.status = status;
   if (minScore) where.score = { gte: parseFloat(minScore) };
   if (search) {
@@ -36,10 +43,17 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = session.user.id;
+
   const body = await request.json();
 
   const app = await prisma.jobApplication.create({
     data: {
+      userId,
       date: body.date ?? new Date().toISOString().slice(0, 10),
       company: body.company,
       role: body.role,

@@ -1,8 +1,9 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { auth } from "@/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -19,6 +20,9 @@ export default async function EvaluationDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const session = await auth();
+  if (!session) redirect("/sign-in");
+
   const { id } = await params;
 
   const evaluation = await prisma.evaluationReport.findFirst({
@@ -27,6 +31,9 @@ export default async function EvaluationDetailPage({
   });
 
   if (!evaluation) notFound();
+
+  // Verify the evaluation belongs to the authenticated user
+  if (evaluation.application.userId !== session.user.id) notFound();
 
   const app = evaluation.application;
   const dimensionScores: Record<string, number> = JSON.parse(

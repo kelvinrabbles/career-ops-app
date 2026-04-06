@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { TRACKER_TABS } from "@/lib/constants";
 import { StatusBadge } from "@/components/status-badge";
 import { ScoreDisplay } from "@/components/score-display";
@@ -21,12 +23,17 @@ export default async function TrackerPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const session = await auth();
+  if (!session) redirect("/sign-in");
+
   const params = await searchParams;
   const activeTab = (params.tab as string) ?? "all";
 
   // Build filter based on active tab
   const tabDef = TRACKER_TABS.find((t) => t.id === activeTab);
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = {
+    userId: session.user.id,
+  };
 
   if (tabDef && "status" in tabDef && tabDef.status) {
     where.status = tabDef.status;

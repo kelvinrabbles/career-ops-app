@@ -1,39 +1,33 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { auth } from "@/auth";
 
 export async function GET() {
-  const profile = await prisma.candidateProfile.findFirst();
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = session.user.id;
+
+  const profile = await prisma.candidateProfile.findUnique({
+    where: { userId },
+  });
   return NextResponse.json(profile);
 }
 
 export async function PUT(request: Request) {
-  const body = await request.json();
-  const existing = await prisma.candidateProfile.findFirst();
-
-  if (existing) {
-    const updated = await prisma.candidateProfile.update({
-      where: { id: existing.id },
-      data: {
-        fullName: body.fullName ?? existing.fullName,
-        email: body.email ?? existing.email,
-        phone: body.phone ?? existing.phone,
-        location: body.location ?? existing.location,
-        linkedin: body.linkedin ?? existing.linkedin,
-        portfolioUrl: body.portfolioUrl ?? existing.portfolioUrl,
-        cvMarkdown: body.cvMarkdown ?? existing.cvMarkdown,
-        targetRoles: body.targetRoles ? JSON.stringify(body.targetRoles) : existing.targetRoles,
-        archetypes: body.archetypes ? JSON.stringify(body.archetypes) : existing.archetypes,
-        narrative: body.narrative ? JSON.stringify(body.narrative) : existing.narrative,
-        compensation: body.compensation ? JSON.stringify(body.compensation) : existing.compensation,
-        timezone: body.timezone ?? existing.timezone,
-        isOnboarded: body.isOnboarded ?? existing.isOnboarded,
-      },
-    });
-    return NextResponse.json(updated);
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const userId = session.user.id;
 
-  const created = await prisma.candidateProfile.create({
-    data: {
+  const body = await request.json();
+
+  const updated = await prisma.candidateProfile.upsert({
+    where: { userId },
+    create: {
+      userId,
       fullName: body.fullName ?? "",
       email: body.email ?? "",
       phone: body.phone ?? "",
@@ -48,6 +42,22 @@ export async function PUT(request: Request) {
       timezone: body.timezone ?? "",
       isOnboarded: body.isOnboarded ?? false,
     },
+    update: {
+      fullName: body.fullName,
+      email: body.email,
+      phone: body.phone,
+      location: body.location,
+      linkedin: body.linkedin,
+      portfolioUrl: body.portfolioUrl,
+      cvMarkdown: body.cvMarkdown,
+      targetRoles: body.targetRoles ? JSON.stringify(body.targetRoles) : undefined,
+      archetypes: body.archetypes ? JSON.stringify(body.archetypes) : undefined,
+      narrative: body.narrative ? JSON.stringify(body.narrative) : undefined,
+      compensation: body.compensation ? JSON.stringify(body.compensation) : undefined,
+      timezone: body.timezone,
+      isOnboarded: body.isOnboarded,
+    },
   });
-  return NextResponse.json(created, { status: 201 });
+
+  return NextResponse.json(updated);
 }

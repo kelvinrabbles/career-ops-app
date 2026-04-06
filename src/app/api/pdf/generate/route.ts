@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { auth } from "@/auth";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = session.user.id;
+
   const body = await request.json();
   const { applicationId } = body;
 
@@ -11,8 +18,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "applicationId required" }, { status: 400 });
   }
 
-  const app = await prisma.jobApplication.findUnique({
-    where: { id: applicationId },
+  const app = await prisma.jobApplication.findFirst({
+    where: { id: applicationId, userId },
     include: { evaluation: true },
   });
 
@@ -20,7 +27,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Application not found" }, { status: 404 });
   }
 
-  const profile = await prisma.candidateProfile.findFirst();
+  const profile = await prisma.candidateProfile.findUnique({
+    where: { userId },
+  });
   if (!profile) {
     return NextResponse.json({ error: "Profile not set up" }, { status: 400 });
   }

@@ -6,8 +6,59 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Auth.js Models ─────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  profile          CandidateProfile?
+  applications     JobApplication[]
+  portalConfigs    PortalConfig[]
+  titleFilters     TitleFilter[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── App Models ─────────────────────────────────────────
+
 model CandidateProfile {
   id           String  @id @default(cuid())
+  userId       String  @unique
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   fullName     String  @default("")
   email        String  @default("")
   phone        String  @default("")
@@ -27,6 +78,8 @@ model CandidateProfile {
 
 model JobApplication {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   number    Int      @unique @default(autoincrement())
   date      String
   company   String
@@ -44,6 +97,8 @@ model JobApplication {
   updatedAt DateTime @updatedAt
 
   evaluation EvaluationReport?
+
+  @@index([userId])
 }
 
 model EvaluationReport {
@@ -67,6 +122,8 @@ model EvaluationReport {
 
 model PortalConfig {
   id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String
   careersUrl  String
   apiUrl      String   @default("")
@@ -78,6 +135,8 @@ model PortalConfig {
   updatedAt   DateTime @updatedAt
 
   scanResults ScanResult[]
+
+  @@index([userId])
 }
 
 model ScanResult {
@@ -95,7 +154,11 @@ model ScanResult {
 
 model TitleFilter {
   id             String @id @default(cuid())
+  userId         String
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   positive       String @default("[]")
   negative       String @default("[]")
   seniorityBoost String @default("[]")
+
+  @@index([userId])
 }

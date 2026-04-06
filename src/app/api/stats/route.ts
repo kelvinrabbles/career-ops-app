@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { auth } from "@/auth";
 
 export async function GET() {
-  const apps = await prisma.jobApplication.findMany();
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = session.user.id;
+
+  const apps = await prisma.jobApplication.findMany({
+    where: { userId },
+  });
 
   const total = apps.length;
   const byStatus: Record<string, number> = {};
@@ -24,6 +33,7 @@ export async function GET() {
   const avgScore = scoredCount > 0 ? Math.round((scoreSum / scoredCount) * 10) / 10 : 0;
 
   const recent = await prisma.jobApplication.findMany({
+    where: { userId },
     orderBy: { createdAt: "desc" },
     take: 5,
   });

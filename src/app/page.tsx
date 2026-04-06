@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
 import { ScoreDisplay } from "@/components/score-display";
@@ -9,10 +10,16 @@ import { Briefcase, TrendingUp, FileCheck, Target } from "lucide-react";
 import Link from "next/link";
 
 export default async function Dashboard() {
-  const profile = await prisma.candidateProfile.findFirst();
+  const session = await auth();
+  if (!session) redirect("/sign-in");
+
+  const profile = await prisma.candidateProfile.findUnique({
+    where: { userId: session.user.id },
+  });
   if (!profile?.isOnboarded) redirect("/onboarding");
 
   const apps = await prisma.jobApplication.findMany({
+    where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
   });
 
@@ -42,7 +49,7 @@ export default async function Dashboard() {
       <div>
         <h1 className="text-2xl font-bold text-[#cdd6f4]">Dashboard</h1>
         <p className="text-[#a6adc8]">
-          Welcome back, {profile.fullName || "there"}
+          Welcome back, {session.user.name || "there"}
         </p>
       </div>
 
