@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const publicPaths = ["/sign-in", "/api/auth"];
+const publicPaths = ["/sign-in", "/register", "/api/auth"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -9,11 +9,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const sessionToken =
-    request.cookies.get("authjs.session-token")?.value ||
-    request.cookies.get("__Secure-authjs.session-token")?.value;
+  const token = request.cookies.get("career-ops-token")?.value;
 
-  if (!sessionToken) {
+  if (!token) {
     const signInUrl = new URL("/sign-in", request.url);
     signInUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(signInUrl);

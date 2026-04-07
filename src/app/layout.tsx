@@ -34,7 +34,12 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex">
         <Providers>
-          {session && <SidebarNav />}
+          {session && (
+            <SidebarNav
+              userName={session.user.name}
+              userEmail={session.user.email}
+            />
+          )}
           <main className={`flex-1 min-h-screen ${session ? "ml-60" : ""}`}>
             <div className="p-6">{children}</div>
           </main>

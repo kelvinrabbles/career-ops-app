@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   KanbanSquare,
@@ -33,19 +32,29 @@ const NAV_ITEMS = [
   { href: "/profile", label: "Profile", icon: "UserCog" as const },
 ];
 
-export function SidebarNav() {
-  const pathname = usePathname();
-  const { data: session } = useSession();
-  const user = session?.user;
+interface SidebarNavProps {
+  userName?: string;
+  userEmail?: string;
+}
 
-  const initials = user?.name
-    ? user.name
+export function SidebarNav({ userName, userEmail }: SidebarNavProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const initials = userName
+    ? userName
         .split(" ")
         .map((n) => n[0])
         .join("")
         .toUpperCase()
         .slice(0, 2)
     : "?";
+
+  async function handleSignOut() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/sign-in");
+    router.refresh();
+  }
 
   return (
     <aside className="fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-border bg-[#1e1e2e]">
@@ -57,9 +66,7 @@ export function SidebarNav() {
         {NAV_ITEMS.map((item) => {
           const Icon = icons[item.icon];
           const isActive =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
+            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
@@ -79,22 +86,19 @@ export function SidebarNav() {
       </nav>
       <div className="border-t border-border p-3">
         <div className="flex items-center gap-3">
-          {user?.image ? (
-            <img
-              src={user.image}
-              alt={user.name ?? "User"}
-              className="h-8 w-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#45475a] text-xs font-semibold text-[#cdd6f4]">
-              {initials}
-            </div>
-          )}
-          <span className="flex-1 truncate text-sm font-medium text-[#cdd6f4]">
-            {user?.name ?? "User"}
-          </span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#45475a] text-xs font-semibold text-[#cdd6f4]">
+            {initials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="truncate text-sm font-medium text-[#cdd6f4]">
+              {userName ?? "User"}
+            </p>
+            {userEmail && (
+              <p className="truncate text-xs text-[#a6adc8]">{userEmail}</p>
+            )}
+          </div>
           <button
-            onClick={() => signOut({ callbackUrl: "/sign-in" })}
+            onClick={handleSignOut}
             className="rounded-md p-1.5 text-[#a6adc8] transition-colors hover:bg-[#313244] hover:text-[#f38ba8]"
             title="Sign out"
           >

@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Briefcase } from "lucide-react";
 
-export default function SignInPage() {
+export default function RegisterPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -18,15 +19,15 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Sign in failed");
+        setError(data.error || "Registration failed");
         return;
       }
 
@@ -46,7 +47,7 @@ export default function SignInPage() {
           <Briefcase className="h-8 w-8 text-[#89b4fa]" />
           <h1 className="text-2xl font-bold text-[#cdd6f4]">CareerOps</h1>
         </div>
-        <p className="mb-6 text-center text-sm text-[#a6adc8]">Sign in to your account</p>
+        <p className="mb-6 text-center text-sm text-[#a6adc8]">Create your account</p>
 
         {error && (
           <div className="mb-4 rounded-md bg-[#f38ba8]/10 border border-[#f38ba8]/30 px-3 py-2 text-sm text-[#f38ba8]">
@@ -55,6 +56,17 @@ export default function SignInPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[#a6adc8] mb-1">Full Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full rounded-md border border-[#45475a] bg-[#1e1e2e] px-3 py-2 text-[#cdd6f4] placeholder-[#a6adc8]/50 focus:border-[#89b4fa] focus:outline-none"
+              placeholder="Kelvin Rabbles"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-[#a6adc8] mb-1">Email</label>
             <input
@@ -73,22 +85,27 @@ export default function SignInPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={6}
               className="w-full rounded-md border border-[#45475a] bg-[#1e1e2e] px-3 py-2 text-[#cdd6f4] placeholder-[#a6adc8]/50 focus:border-[#89b4fa] focus:outline-none"
-              placeholder="Enter your password"
+              placeholder="At least 6 characters"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-[#89b4fa] px-4 py-2.5 text-sm font-medium text-[#1e1e2e] transition-colors hover:bg-[#89b4fa]/90 disabled:opacity-50"
+            className="w-full rounded-md bg-[#a6e3a1] px-4 py-2.5 text-sm font-medium text-[#1e1e2e] transition-colors hover:bg-[#a6e3a1]/90 disabled:opacity-50"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-[#a6adc8]">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-[#89b4fa] hover:underline">Register</Link>
+        <p className="mt-4 text-center text-xs text-[#a6adc8]/70">
+          Limited to 4 users
+        </p>
+
+        <p className="mt-4 text-center text-sm text-[#a6adc8]">
+          Already have an account?{" "}
+          <Link href="/sign-in" className="text-[#89b4fa] hover:underline">Sign in</Link>
         </p>
       </div>
     </div>
